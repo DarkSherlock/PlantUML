@@ -1,0 +1,95 @@
+@startuml
+'https://plantuml.com/class-diagram
+skinparam classAttributeIconSize 0
+
+ControllerHomeActivity *-down-> BannerController
+ControllerHomeActivity *-left-> ControllerBannerFragment
+
+ControllerBannerFragment ..|> IBannerView
+HostBannerFragment .up.|> IBannerView
+
+BannerController .down.|> RoomsEventListener
+BannerController .down.> RoomsEventManager
+BannerController .down.> BannerItems
+BannerController -left-> IBannerView
+
+RoomsEventManager -down-> rcf.RcfEventUiController
+RoomsEventManager -right-> RoomsEventListener: callback
+rcf.RcfEventUiController -down-> rcv.RcvEventController
+
+class ControllerHomeActivity {
+    # setBannerController(controller: BannerController,bannerView: IBannerView, attachedId: Int)
+}
+
+class HostBannerFragment
+class ControllerBannerFragment
+
+note top of BannerItems
+    if you are in the HostMeeting screen,
+    use FLAG_HOST_BANNER_IN_MEETING to generate a BannerItem map
+    which are supported to display in the HostMeeting screen
+end note
+class BannerItems<< (S, #FF7700) >> {
+    + FLAG_HOST_BANNER: Int
+    + FLAG_HOST_AUTO_FRAMING_BANNER: Int
+    + FLAG_HOST_BANNER_IN_MEETING: Int
+    + FLAG_HOST_BANNER_IN_PHONE: Int
+    + FLAG_CONTROLLER_BANNER: Int
+    + FLAG_CONTROLLER_PARTICIPANTS_BANNER: Int
+    + FLAG_CONTROLLER_SHARING_BANNER: Int
+    + generateBannerItems(flags: Int): MutableMap<RcvEventName, AbstractBannerItem>
+}
+
+note right of BannerController
+    filter out the supported banner items,
+    and then pass to IBannerView to show them
+end note
+class BannerController {
+    - flags: Int
+    - bannerItems: Map<RcvEventName, AbstractBannerItem>
+    - bannerView: IBannerView
+    + init(context: Context, bannerView: IBannerView)
+    + filterBanners(events: List<RcvEvent>): Boolean
+    + hideAllBanners()
+}
+
+interface IBannerView {
+    + showBanners(bannerMaps: LinkedHashMap<RcvEvent, AbstractBannerItem>): Boolean
+}
+
+class RoomsEventManager<< (S, #FF7700) Singleton>> {
+    - eventController: RcfEventUiController
+    + registerRoomsEventListener(listener: RoomsEventListener)
+    + unregisterRoomsEventListener(listener: RoomsEventListener)
+}
+
+note right of RoomsEventListener
+    showBannerList return whether handled or not
+end note
+interface RoomsEventListener {
+    + showBannerList(event:RcfEvent): Boolean
+    + showToast(event:RcfEvent): Boolean
+    + showAlert(event:RcfEvent): Boolean
+}
+
+namespace rcf {
+    class RcfEventUiController {
+        + setDelegate(delegate: RcfEventDelegate)
+        + getCurrentEvents(): List<RcfEvent>
+        + postCustomEvents(eventName: RcvEventName, message: String)
+        + hideCustomEvents(eventName: RcvEventName)
+    }
+
+    class RcfEventDelegate {
+        + showBannerList(event:RcfEvent)
+        + showToast(event:RcfEvent)
+        + showAlert(event:RcfEvent)
+    }
+
+    RcfEventUiController -right-> RcfEventDelegate: callback
+}
+
+namespace rcv {
+    class RcvEventController
+}
+@enduml

@@ -1,0 +1,20 @@
+@startuml
+'https://plantuml.com/activity-diagram-beta
+
+start
+:apply brand config;
+:parse config.json;
+  note right
+    e.g. app/tools/DynamicResTools/brands/atos/configs/config.json
+  end note
+if (the config is configured in config.json?) then (yes)
+  :use the dynamic config;
+else (no)
+  :use the static config;
+    note right
+      gradle config
+    end note
+endif
+stop
+
+@enduml

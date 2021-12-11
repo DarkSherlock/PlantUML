@@ -1,0 +1,124 @@
+@startuml
+'https://plantuml.com/class-diagram
+skinparam classAttributeIconSize 0
+
+ControllerGlobalErrorHandler ..> ControllerMaskActivity: launch
+ControllerGlobalErrorHandler +--> Scene
+ControllerGlobalErrorHandler ..|>  OnMaskInfoChangedListener: implement
+ControllerGlobalErrorHandler ..> MaskInfoService
+
+ControllerMaskActivity ..|> IControllerMaskView
+ControllerMaskActivity --> ControllerMaskPresenter
+ControllerMaskActivity ..> VoiceCommandManager: blockVC
+ControllerMaskActivity --> ControllerDigitalSignageFragment
+ControllerMaskActivity --> ControllerScreenSaverController
+
+ControllerDigitalSignageFragment --> SignOutPresenter
+
+ControllerMaskPresenter --> IControllerMaskView
+ControllerMaskPresenter ..> MaskInfoService
+ControllerMaskPresenter ..|> OnMaskInfoChangedListener
+
+MeetingLauncherPresenter ..> MaskInfoService
+MeetingLauncherPresenter ..|> OnMaskInfoChangedListener
+
+ConnectionErrorShowHomePresenter ..> MaskInfoService
+ConnectionErrorShowHomePresenter ..|> OnMaskInfoChangedListener
+
+IControllerMaskConnector "1" -right-> "1" ControllerMaskInfoObserver: use
+
+MaskInfoService "1" --> "*" OnMaskInfoChangedListener: notify
+MaskInfoService --> IControllerMaskConnector
+MaskInfoService -->  ControllerMaskInfoObserver
+
+BaseCallService +--> IncomingPhoneCallAppearDelegate
+BaseCallService +--> RoomIncomingVideoCallDelegate
+BaseCallService ..> MaskInfoService
+BaseCallService ..|> OnMaskInfoChangedListener
+
+SoftphonePresenter ..> MaskInfoService
+SoftphonePresenter ..|> OnMaskInfoChangedListener
+
+class ControllerMaskActivity {
+    - presenter: ControllerMaskPresenter
+    - screenSaverController: ControllerScreenSaverController
+}
+
+class VoiceCommandManager {
+    + setBlockType(blockType: BlockType, isBlock: Boolean)
+}
+
+class ControllerMaskPresenter {
+    - view: IControllerMaskView
+}
+
+class ControllerDigitalSignageFragment {
+    - signOutPresenter: SignOutPresenter
+    + onCreateContentView(): View
+    + newInstance(title:String, content: String)
+}
+
+class ControllerGlobalErrorHandler {
+    - lastScene: Scene
+    - launchMaskActivity()
+    - shouldHandleCurrentError(scenes: List<Scene>): Boolean
+}
+
+class IControllerMaskConnector {
+    - delegate: ControllerMaskInfoObserver
+    + loadCurrentStatus()
+}
+
+class ControllerMaskInfoObserver {
+    + onControllerMaskInfoNotify(info: ControllerMaskInfo?)
+}
+
+class ControllerScreenSaverController
+class SignOutPresenter
+
+class MeetingLauncherPresenter {
+    - leaveMeetingWithoutFeedback()
+}
+
+class ConnectionErrorShowHomePresenter {
+    - showHomeScreen()
+}
+
+class SoftphonePresenter {
+    - showHomeScreen()
+}
+
+interface IControllerMaskView {
+    + enterDSMode()
+    + exitDSMode()
+}
+
+class MaskInfoService {
+    - maskConnector: IControllerMaskConnector
+    + registerListener(listener: MaskInfoObserver)
+    + unregisterListener(listener: MaskInfoObserver)
+    - notifyMaskInfoChanged(maskInfo: ControllerMaskInfo?)
+}
+
+class BaseCallService
+
+class IncomingPhoneCallAppearDelegate {
+    + onIncomingCallAppearInMainThread()
+}
+
+class RoomIncomingVideoCallDelegate {
+    + onIncomingVideoCall()
+}
+
+interface OnMaskInfoChangedListener {
+    + onMaskInfoChanged(info: ControllerMaskInfo)
+}
+
+enum Scene {
+    NONE
+    FORCE_UPGRADE
+    CONNECTION_ERROR
+    MASK
+}
+
+@enduml

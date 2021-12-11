@@ -1,0 +1,16 @@
+@startuml
+'https://plantuml.com/activity-diagram-beta
+|Web|
+start
+:open breakout rooms;
+:move Android Rooms into a breakout room;
+|Android Rooms|
+:show breakout transition;
+if (move successfully?) then (yes)
+  :show breakout room UI;
+else (no)
+  :leave meeting;
+endif
+stop
+
+@enduml

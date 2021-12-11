@@ -1,0 +1,34 @@
+@startuml
+'https://plantuml.com/sequence-diagram
+
+autonumber
+
+actor Actor
+autoactivate on
+
+RoomsEventManager -> BannerController: showBanner
+
+BannerController -> BannerItems: generateBannerItems(flags)
+BannerItems -> ClickableBannerItem **: create
+return return supported banner items
+BannerController -> BannerController: filter out the supported banners
+BannerController -> ControllerBannerFragment: showBanners(bannerMaps)
+
+ControllerBannerFragment -> ClickableBannerItem: getClickableBannerMessage(context, event, listener)
+ClickableBannerItem -> ClickableBannerItem: getBannerMessage(context, event)
+return return message
+ClickableBannerItem -> ClickableBannerItem : getClickableSpanList(message, actions)
+return return ClickableSpanList
+return return ClickableBannerMessage
+ControllerBannerFragment -> ControllerBannerFragment: update UI
+ControllerBannerFragment -->> BannerController: return handled
+BannerController -->> RoomsEventManager: return handled
+deactivate BannerController
+deactivate ControllerBannerFragment
+|||
+Actor -> ClickableBannerItem: onClick()
+ClickableBannerItem -> ControllerBannerFragment: onClick(eventName, action)
+ControllerBannerFragment -> ControllerBannerFragment: notifyListener
+ControllerBannerFragment -> ControllerHomeActivity: onClick(eventName, action)
+return return handled
+@enduml

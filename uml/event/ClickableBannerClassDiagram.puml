@@ -1,0 +1,73 @@
+@startuml
+'https://plantuml.com/class-diagram
+skinparam classAttributeIconSize 0
+
+ControllerHomeActivity *-down-> BannerController
+ControllerHomeActivity *-left-> ControllerBannerFragment
+ControllerHomeActivity ..|> OnClickLister
+
+ControllerBannerFragment ..|> IClickableBannerView
+ControllerBannerFragment ..|> OnClickLister
+ControllerBannerFragment ..> AbstractBannerItem
+ControllerBannerFragment ..> ClickableBannerItem
+
+BannerController .down.> BannerItems
+BannerController -left-> IBannerView
+
+IClickableBannerView --|> IBannerView
+ClickableBannerItem --|> AbstractBannerItem
+ClickableBannerItem ..|> OnClickLister
+
+class ControllerHomeActivity {
+    # setBannerController(controller: BannerController,bannerView: IBannerView, attachedId: Int)
+}
+
+note top of ControllerBannerFragment
+    if the bannerItem to show is ClickableBannerItem,
+    pass itself as an OnClickLister to ClickableBannerItem
+    to getClickableBannerMessage.
+
+    listenerMap is used for binding events
+    listener is used for all events
+end note
+class ControllerBannerFragment {
+    - listenerMap: Map<RcfEventName, OnClickLister?>
+    - listener: OnClickLister?
+    - messageText: TextView
+    - notifyOnBannerClick(eventName: RcfEventName, action: String)
+}
+
+class BannerController {
+    - flags: Int
+    - bannerItems: Map<RcvEventName, AbstractBannerItem>
+    - bannerView: IBannerView
+    + init(context: Context, bannerView: IBannerView)
+    + filterBanners(events: List<RcvEvent>): Boolean
+    + hideAllBanners()
+}
+
+interface IBannerView {
+    + showBanners(bannerMaps: LinkedHashMap<RcvEvent, AbstractBannerItem>): Boolean
+}
+
+interface IClickableBannerView {
+    + setOnBannerClickListener(eventName: RcfEventName?, listener: OnClickLister?)
+}
+
+interface OnClickLister {
+    + onClick(eventName: RcfEventName, action: String): Boolean
+}
+
+abstract class AbstractBannerItem {
+    + iconRes: Int
+    + {abstract} getBannerMessage(context: Context, meetingEvent: RcvEvent): CharSequence
+}
+
+class ClickableBannerItem {
+    + messageRes: Int
+    + actions: Array<Int>
+    + getClickableBannerMessage(context: Context, meetingEvent: RcvEvent, listener: OnClickLister?): CharSequence
+    # getClickableSpanList(message: String, actions: Array<String>): Array<Pair<Int, ClickableSpan>>
+}
+class BannerItems<< (S, #FF7700) >>
+@enduml

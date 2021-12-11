@@ -1,0 +1,102 @@
+@startuml
+'https://plantuml.com/class-diagram
+skinparam classAttributeIconSize 0
+
+MeetingService --> MeetingState: have
+MeetingService --> IActiveMeetingUiController: use
+MeetingService --> IBreakoutRoomsUiController: use
+MeetingService -right-> IMeetingStateListener: notify
+MeetingService +--> ActiveMeetingDelegate: inner class
+IActiveMeetingUiController --> ActiveMeetingDelegate: callback
+ControllerMeetingActivity o--> ControllerMeetingFragment
+ControllerMeetingActivity o--> BreakoutHoldingFragment
+ControllerMeetingActivity --> ControllerMeetingStatePresenter
+ControllerMeetingActivity ..|> IControllerMeetingStateView
+ControllerMeetingStatePresenter --> IControllerMeetingStateView
+ControllerMeetingStatePresenter ..> MeetingService
+ControllerMeetingStatePresenter ..|> IMeetingStateListener
+IMeetingStateListener ..> MeetingState
+ParticipantInMeetingListPresenter --> IParticipantListView
+ParticipantInMeetingListPresenter ..> MeetingService
+ParticipantListViewFragment ..|> IParticipantListView
+ParticipantListViewFragment --> ParticipantInMeetingListPresenter
+ParticipantListViewFragment --> ParticipantListDialogFragment
+ParticipantListDialogFragment o--> ParticipantListViewFragment
+
+class MeetingService<< (S, #FF7700) Singleton>> {
+    - activeMeetingUiController: IActiveMeetingUiController?
+    - brUiController: IBreakoutRoomsUiController?
+    - weakStateListeners: MutableSetOf<WeakReference<IMeetingStateListener>>
+    - currentState: MeetingState
+    + oldState: MeetingState = currentState
+    + registerMeetingStateListener(listener: IMeetingStateListener)
+    + unregisterMeetingStateListener(listener: IMeetingStateListener)
+    + isBreakoutRoom(): Boolean
+    + getBreakoutRoomName(): String?
+    + getNewRoomName(): String?
+    + isReturningToMain(): Boolean
+    - notifyMeetingStateChanged(oldState: MeetingState, newState: MeetingState)
+}
+
+class MeetingState {
+    + type:EStateType
+}
+
+interface IMeetingStateListener {
+    + onStateChanged(oldState: MeetingState, newState: MeetingState)
+    + onError(error: IMeetingError, state: MeetingState, source: EErrorSource)
+}
+
+class ActiveMeetingDelegate {
+    + onBreakoutRoomsEventChange(type: EBreakoutRoomsEventType?, error: IMeetingError?)
+}
+
+class IActiveMeetingUiController {
+    + setDelegate(delegate: IActiveMeetingDelegate?)
+}
+
+class IBreakoutRoomsUiController {
+    + isBreakoutRoomsOpened(): Boolean
+    + isBreakoutRoom(): Boolean
+    + isReturningToMain(): Boolean
+    + getBreakoutRoomName(): String
+    + getBreakoutRoomId(): String
+    + getNewRoomName(): String
+    + getNewRoomId(): String
+    + returnToMainRoom()
+}
+
+class ControllerMeetingStatePresenter {
+    - view: IControllerMeetingStateView
+}
+
+interface IControllerMeetingStateView {
+    + switchToMeeting(action: ControllerAction)
+    + switchToHolding(type: HoldingType)
+}
+
+class ControllerMeetingActivity {
+    - statePresenter: ControllerMeetingStatePresenter
+}
+
+class ControllerMeetingFragment
+class BreakoutHoldingFragment
+
+class ParticipantInMeetingListPresenter {
+    - participantListView: IParticipantListView
+}
+
+interface IParticipantListView {
+    + updateBottomBarMenus(userRole: ParticipantUserRole, isBreakoutRoomMeeting: Boolean)
+    + updateParticipantsTitle(isBreakoutRoom: Boolean, brName: String, activeCount: Int)
+}
+
+class ParticipantListDialogFragment {
+    - titleView: TextView
+    + titleName: String?
+    + updateTitle(title: String, suffixBeginIndex: Int)
+}
+class ParticipantListViewFragment {
+    + parentFragment: ParticipantListViewFragment?
+}
+@enduml

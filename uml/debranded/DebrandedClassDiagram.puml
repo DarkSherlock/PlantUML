@@ -1,0 +1,150 @@
+@startuml
+'https://plantuml.com/class-diagram
+skinparam classAttributeIconSize 0
+
+DynamicResourceService --|> BrandResourceUpdateListener: notify
+DynamicResourceService ..> IDynamicBrandController: loadDynamicBrandResource
+DynamicResourceService ..> BrandConfigManager: applyConfig
+IDynamicBrandController ..> IUpdateDynamicBrandResourceCallback: callback
+ControllerHomePresenter ..> DynamicResourceService: registerListener and loadAndApplyResPackage
+ControllerHomePresenter --> IControllerHomeView
+ControllerHomePresenter ..|> BrandResourceUpdateListener
+ControllerHomeActivity ..|> IControllerHomeView
+ControllerHomeActivity --> ControllerHomePresenter
+ControllerHomeActivity --|> ThemeWrapBaseActivity
+ThemeWrapBaseActivity ..> ThemeManager: getDynamicResource
+ThemeWrapBaseActivity .right.|> OnAppThemeChangedListener
+ApplicationProxy ..> ThemeManager: getDynamicResource
+ApplicationProxy ..> DynamicResourceService: load and unload
+ThemeManager -up-> OnAppThemeChangedListener: notify
+HostInitialDelegate ..> DynamicResourceService: loadAudioPromptResources
+WatermarkDisplayPresenter ..> DynamicResourceService: getAppBrandById
+WatermarkDisplayPresenter --> IWatermarkView
+MeetingWatermarkView --> WatermarkDisplayPresenter
+MeetingWatermarkView ..|> IWatermarkView
+IActiveMeetingUiController ..> TonesSettingsProvider
+TonesSettingsProvider ..> DynamicResourceService: getAppBrandById
+
+class DynamicResourceService<< (S, #FF7700) Singleton >> {
+    - BRAND_TARGET_ID_MAP: Map
+    - isLoading: Boolean
+    - listeners: CopyOnWriteArrayList<WeakReference<BrandResourceUpdateListener>>
+    + loadAndApplyResPackage(allowCache: Boolean)
+    + unLoadDynamicRes()
+    + loadAudioPromptResources()
+    + isDynamicApp(): Boolean
+    + getAppBrandById(brandId: String): AppBrand?
+    + getBrandIdList(): List<String>
+    + registerListener(listener: BrandResourceUpdateListener)
+    + unregisterListener(listener: BrandResourceUpdateListener)
+}
+
+interface BrandResourceUpdateListener {
+    + onThemeUpdate(isLoaded: Boolean)
+    + onConfigUpdate(isLoaded: Boolean)
+}
+
+class BrandConfigManager<< (S, #FF7700) Singleton >> {
+    - config: BrandingConfig?
+    + hasApplyConfig: Boolean
+    + applyConfig(configFilePath: String): Boolean
+    + clearConfig()
+    + getBoolean(config: BooleanConfig): Boolean
+    - getJsonString(configFile: File): String
+}
+
+class IDynamicBrandController {
+    + loadDynamicBrandResource(callback: IUpdateDynamicBrandResourceCallback)
+}
+
+abstract class IUpdateDynamicBrandResourceCallback {
+    + onUpdateDynamicBrandResource(path: String)
+}
+
+class ThemeManager<< (S, #FF7700) Singleton >> {
+    + appTheme: AppTheme
+    + needRecreateResources: Boolean
+    - appResources: Resources?
+    - resLoader: ResourcesLoader?
+    - listeners = CopyOnWriteArrayList<WeakReference<OnAppThemeChangedListener>>
+    + registerListener(listener: OnAppThemeChangedListener)
+    + unregisterListener(listener: OnAppThemeChangedListener)
+    + getResource(superRes: Resources, isFromApplication: Boolean = false): Resources
+    + clearDynamicTheme()
+    + setDynamicTheme(path: String): Boolean
+    - newDynamicResource(superRes: Resources): Resources?
+}
+
+note left of ThemeManager::getResource
+  if OS >= Android R, we add the path of
+  dynamic resource package to the resLoader.
+  if OS < Android R, We create a resource
+  with dynamic resource pack path applied.
+end note
+
+interface OnAppThemeChangedListener {
+    + onThemeChanged(theme: AppTheme)
+}
+
+class ApplicationProxy {
+    + getResource(superRes: Resources): Resources
+    - onAccountLoggedIn()
+    - onAccountLoggedOut(errorCode: ERoomsLifecycleErrorCode)
+}
+
+class ThemeWrapBaseActivity {
+    - currentRes: Resources?
+    - currentTheme: AppTheme?
+    - needRecreate: Boolean
+    + getResources(): Resources
+    + recreateCurrentActivity()
+    # skipRecreate(): Boolean
+}
+
+note left of ThemeWrapBaseActivity::getResources
+  when the resource get from
+  ThemeManager is different from currentRes,
+  we need recreate activity to apply
+  the new resource if OS < Android R
+end note
+
+class ControllerHomeActivity {
+    - presenter: ControllerHomePresenter
+}
+
+class ControllerHomePresenter {
+    - view: IControllerHomeView
+}
+
+interface IControllerHomeView {
+    + showLogo()
+}
+
+class HostInitialDelegate {
+    + initModeFeatures(context: Context)
+}
+
+class IActiveMeetingUiController {
+    + setTonesSettings(provider: ITonesSettingsProvider)
+}
+
+class TonesSettingsProvider {
+    - meetingBrandId: String
+    + getFilePath(tone: String): String
+    - getJoinMeetingAudioPrompt(provider: IFileStorageProvider): String
+}
+
+class WatermarkDisplayPresenter {
+    - view: IWatermarkView
+    - setWaterMarkByBrandId(brandId: String?)
+}
+
+class MeetingWatermarkView {
+    - presenter: WatermarkDisplayPresenter
+}
+
+interface IWatermarkView {
+    + setBackgroundResource(resId: Int)
+    + setBackgroundDrawable(drawable: Drawable)
+}
+@enduml

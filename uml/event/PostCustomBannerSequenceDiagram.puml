@@ -1,0 +1,19 @@
+@startuml
+'https://plantuml.com/sequence-diagram
+
+autonumber
+
+actor Actor
+participant RoomsEventManager
+participant RCF
+participant "RCV SDK" as RCV
+entity RCVEvent
+autoactivate on
+
+Actor -> RoomsEventManager: postCustomEvent(name)
+RoomsEventManager -> RCF: postCustomEvent(name)
+RCF -> RCV: postCustomEvent(name)
+RCV -> RCVEvent **: create
+RCV -->> RCF: update events
+RCF -> RoomsEventManager: showBanner(event)
+@enduml

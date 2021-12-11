@@ -1,0 +1,46 @@
+@startuml
+'https://plantuml.com/activity-diagram-beta
+skinparam conditionStyle inside
+|App|
+start
+:Login;
+:loadAndApplyResPackage;
+|Corelib|
+if (is new version?) then (yes)
+  :copy dynamic resources package to the bundle dir;
+  :unzip dynamic resources package;
+else (no)
+  :use cache;
+endif
+:parse Corelib's brand config;
+  note right
+    e.g. host_brand_config.json
+  end note
+:init initFeature;
+  note right
+    enable/disable Segment and LaunchDarkly
+  end note
+|App|
+fork
+  :setDynamicTheme;
+fork again
+  :applyBrandConfig;
+    note right
+      parse App's brand config in the dynamic resources package
+    end note
+  :initFeature;
+    note right
+      enable/disable Firebase, FileStack, PAC, etc.
+    end note
+  end
+end merge
+if (OS<=Android) then (yes)
+  :create a new Resource;
+else (no)
+  :add the resource path to ResLoader;
+endif
+:recreate home activity;
+:showBrandLogo;
+stop
+
+@enduml
