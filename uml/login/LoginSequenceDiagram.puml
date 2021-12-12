@@ -1,0 +1,88 @@
+@startuml
+'https://plantuml.com/sequence-diagram
+
+'refer to: https://wiki.ringcentral.com/pages/viewpage.action?pageId=450862368
+
+autonumber
+
+actor User
+boundary WebSignInActivity
+note right of ACE: Access Control Engine
+note right of CLW: Central Login Web
+note right of PLA: Platform
+note right of GDS: Glip Discovery Server
+boundary SelectRoomActivity order 20
+autoactivate on
+
+User -> WebSignInActivity: login
+
+WebSignInActivity -> ACE: authorization
+
+return return web sign-in url
+
+WebSignInActivity -> CLW: load(url)
+return return input user name form
+deactivate
+
+User -> WebSignInActivity: input user name
+
+WebSignInActivity -> CLW: submit login form
+
+
+CLW -> PLA: getLoginInfo
+return return loginInfo(accountId, extensionId)
+
+return return input password form
+deactivate
+
+User -> WebSignInActivity: input password
+
+WebSignInActivity -> CLW: submit form
+return return authCode
+
+WebSignInActivity -> PLA: getAuthToken(authCode)
+return return authToken
+
+WebSignInActivity -> PLA: getApiVersion(authToken)
+return return apiVersion
+
+WebSignInActivity -> PLA: getClientInfo(authToken, apiVersion)
+return return clientInfo
+
+WebSignInActivity -> PLA: getAccountInfo(authToken, apiVersion, clientInfo)
+return return accountInfo
+
+WebSignInActivity -> PLA: getExtensionInfo(authToken, apiVersion, accountId)
+return return extensionInfo
+
+WebSignInActivity -> PLA: getFeatures(authToken, apiVersion, extensionId)
+return return features
+
+WebSignInActivity -> PLA: getPermission(authToken, apiVersion, extensionId)
+return return permissions
+
+WebSignInActivity -> GDS: getInstanceInfo
+note right
+instance means Glip server for a brand
+Include 4 servers:
+    1.GSX(Glip sexio server): glip.apiServer
+    2.GAS(Glip api server): glip.statusServer
+    3.GCS(Glip cache server): glip.cacheServer
+    4.SFD(secure download server): glip.downloadServer
+url: /endpoints?brandId=$brandId
+end note
+return return instanceInfo
+
+WebSignInActivity -> Glip: login(instanceId)
+alt login successfully
+    Glip --> WebSignInActivity: return ok
+    WebSignInActivity -> SelectRoomActivity: startActivity
+    deactivate
+else login failed
+    activate Glip
+    Glip --> WebSignInActivity: return error
+    WebSignInActivity -> WebSignInActivity: showAlert
+end
+
+
+@enduml
