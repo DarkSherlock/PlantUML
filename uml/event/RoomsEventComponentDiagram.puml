@@ -2,23 +2,15 @@
 'https://plantuml.com/component-diagram
 
 interface notifyRcvEvents as NRCV
-interface postCustomRcvEvents as PCRCV
-interface postCustomBanner as PCB
-interface showBanner as SB
-interface showToast as ST
-interface showAlert as SA
+interface postEvent
+interface onEvent
 
 NRCV -d- [RCV SDK]
-PCRCV -d- [RCV SDK]
-PCB -d- [RCF]
-SB -d- [RCF]
-ST -d- [RCF]
-SA -d- [RCF]
+postEvent -d- [RCF]
+onEvent -d- [RCF]
 
-[APP] ..> SB: impl
-[APP] ..> ST: impl
-[APP] ..> SA: impl
-[APP] ..> PCB: use
+
+[APP] ..> onEvent: impl
+[APP] ..> postEvent: use
 [RCF] ..> NRCV: require events
-[RCF] ..> PCRCV: post events
 @enduml

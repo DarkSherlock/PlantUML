@@ -3,8 +3,20 @@
 
 autonumber
 
-participant "RCV SDK" as RCV
+participant "RCV SDK" as RCV order 0
+participant RCF order 1
+participant RoomsEventManager order 2
+participant BannerController order 3
+participant BannerItems order 4
+participant AbstractBannerItem order 5
+participant ControllerBannerFragment order 6
+
 autoactivate on
+
+BannerController -> BannerItems: generateBannerItems
+BannerItems -> AbstractBannerItem **: create
+return return supported banner items
+
 RCV ->> RCF: updated RCV events
 
 RCF ->> RCF: filter out the Rooms events
@@ -13,9 +25,7 @@ RCF -> RoomsEventManager: showBanner
 
 RoomsEventManager -> BannerController: showBanner
 
-BannerController -> BannerItems: generateBannerItems
-BannerItems -> AbstractBannerItem **: create
-return return supported banner items
+
 BannerController -> BannerController: filter out the supported banners
 BannerController -> ControllerBannerFragment: showBanners
 

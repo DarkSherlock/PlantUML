@@ -6,14 +6,11 @@ autonumber
 actor Actor
 participant RoomsEventManager
 participant RCF
-participant "RCV SDK" as RCV
-entity RCVEvent
+entity RCFEvent
 autoactivate on
 
 Actor -> RoomsEventManager: postCustomEvent(name)
 RoomsEventManager -> RCF: postCustomEvent(name)
-RCF -> RCV: postCustomEvent(name)
-RCV -> RCVEvent **: create
-RCV -->> RCF: update events
+RCF -> RCFEvent **: create
 RCF -> RoomsEventManager: showBanner(event)
 @enduml

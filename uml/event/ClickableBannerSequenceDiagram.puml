@@ -4,13 +4,16 @@
 autonumber
 
 actor Actor
+participant RoomsEventManager order 0
 autoactivate on
-
-RoomsEventManager -> BannerController: showBanner
 
 BannerController -> BannerItems: generateBannerItems(flags)
 BannerItems -> ClickableBannerItem **: create
 return return supported banner items
+
+RoomsEventManager -> BannerController: showBanner
+
+
 BannerController -> BannerController: filter out the supported banners
 BannerController -> ControllerBannerFragment: showBanners(bannerMaps)
 
