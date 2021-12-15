@@ -13,9 +13,13 @@ BannerController .down.> RoomsEventManager
 BannerController .down.> BannerItems
 BannerController -left-> IBannerView
 
-RoomsEventManager -down-> rcf.RcfEventUiController
+RoomsEventManager *-down-> rcf.EventController
 RoomsEventManager -right-> RoomsEventListener: callback
-rcf.RcfEventUiController -down-> rcv.RcvEventController
+
+
+rcf.EventController -right-> rcf.EventCallback: callback
+rcf.EventService -up-> rcf.EventController: callback
+rcf.EventService *-down-> rcv.IRoomsRcvEventUiController
 
 class ControllerHomeActivity {
     # setBannerController(controller: BannerController,bannerView: IBannerView, attachedId: Int)
@@ -58,7 +62,7 @@ interface IBannerView {
 }
 
 class RoomsEventManager<< (S, #FF7700) Singleton>> {
-    - eventController: RcfEventUiController
+    - eventController: EventController
     + registerRoomsEventListener(listener: RoomsEventListener)
     + unregisterRoomsEventListener(listener: RoomsEventListener)
 }
@@ -73,23 +77,23 @@ interface RoomsEventListener {
 }
 
 namespace rcf {
-    class RcfEventUiController {
-        + setDelegate(delegate: RcfEventDelegate)
+    class EventController {
+        + addCallback(callback: EventCallback)
         + getCurrentEvents(): List<RcfEvent>
         + postCustomEvents(eventName: RcvEventName, message: String)
         + hideCustomEvents(eventName: RcvEventName)
     }
 
-    class RcfEventDelegate {
+    class EventCallback {
         + showBannerList(event:RcfEvent)
         + showToast(event:RcfEvent)
         + showAlert(event:RcfEvent)
     }
 
-    RcfEventUiController -right-> RcfEventDelegate: callback
+    class EventService
 }
 
 namespace rcv {
-    class RcvEventController
+    class IRoomsRcvEventUiController
 }
 @enduml
