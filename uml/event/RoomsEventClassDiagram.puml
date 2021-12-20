@@ -71,23 +71,23 @@ note right of RoomsEventListener
     showBannerList return whether handled or not
 end note
 interface RoomsEventListener {
-    + showBannerList(event:RcfEvent): Boolean
-    + showToast(event:RcfEvent): Boolean
-    + showAlert(event:RcfEvent): Boolean
+    + showBannerList(event:RoomsEvent): Boolean
+    + showToast(event:RoomsEvent): Boolean
+    + showAlert(event:RoomsEvent): Boolean
 }
 
 namespace rcf {
     class EventController {
         + addCallback(callback: EventCallback)
-        + getCurrentEvents(): List<RcfEvent>
-        + postCustomEvents(eventName: RcvEventName, message: String)
-        + hideCustomEvents(eventName: RcvEventName)
+        + getCurrentEvents(): List<RoomsEvent>
+        + postCustomEvents(event: RoomsEvent, priority: Int)
+        + hideCustomEvents(eventName: String)
     }
 
     class EventCallback {
-        + showBannerList(event:RcfEvent)
-        + showToast(event:RcfEvent)
-        + showAlert(event:RcfEvent)
+        + showBannerList(event:RoomsEvent)
+        + showToast(event:RoomsEvent)
+        + showAlert(event:RoomsEvent)
     }
 
     class EventService

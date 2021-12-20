@@ -5,12 +5,12 @@ autonumber
 
 actor Actor
 participant RoomsEventManager
+entity RoomsEvent
 participant RCF
-entity RCFEvent
 autoactivate on
 
-Actor -> RoomsEventManager: postCustomEvent(name)
-RoomsEventManager -> RCF: postCustomEvent(name)
-RCF -> RCFEvent **: create
+Actor -> RoomsEventManager: postCustomEvent(name, message, params, priority)
+RoomsEventManager -> RoomsEvent **: create
+RoomsEventManager -> RCF: postCustomEvent(event, priority)
 RCF -> RoomsEventManager: showBanner(event)
 @enduml

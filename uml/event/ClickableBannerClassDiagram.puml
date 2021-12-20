@@ -55,7 +55,7 @@ interface IClickableBannerView {
 }
 
 interface OnClickLister {
-    + onClick(eventName: RcfEventName, action: String): Boolean
+    + onClick(eventName: String, action: String): Boolean
 }
 
 abstract class AbstractBannerItem {

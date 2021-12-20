@@ -3,14 +3,17 @@
 
 interface notifyRcvEvents as NRCV
 interface postEvent
-interface onEvent
 
 NRCV -d- [RCV SDK]
 postEvent -d- [RCF]
-onEvent -d- [RCF]
+showBannerList -d- [RCF]
+showAlert -d- [RCF]
+showToast -d- [RCF]
 
 
-[APP] ..> onEvent: impl
+[APP] ..> showBannerList: impl
+[APP] ..> showAlert: impl
+[APP] ..> showToast: impl
 [APP] ..> postEvent: use
 [RCF] ..> NRCV: require events
 @enduml
