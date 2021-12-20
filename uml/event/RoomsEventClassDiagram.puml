@@ -78,14 +78,15 @@ interface RoomsEventListener {
 
 namespace rcf {
     class EventController {
-        + addCallback(callback: EventCallback)
+        + addCallback(callback: IEventCallback)
+        + removeCallback(callback: IEventCallback)
         + getCurrentEvents(): List<RoomsEvent>
-        + postCustomEvents(event: RoomsEvent, priority: Int)
-        + hideCustomEvents(eventName: String)
+        + postEvent(event: RoomsEvent)
+        + removeEvent(event: RoomsEvent)
     }
 
-    class EventCallback {
-        + showBannerList(event:RoomsEvent)
+    class IEventCallback {
+        + showBannerList(events: List<RcvEvent>))
         + showToast(event:RoomsEvent)
         + showAlert(event:RoomsEvent)
     }
