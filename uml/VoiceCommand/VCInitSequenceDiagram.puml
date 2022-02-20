@@ -1,0 +1,43 @@
+@startuml
+'https://plantuml.com/sequence-diagram
+
+autonumber
+
+actor Actor
+participant App
+participant RCV
+autoactivate on
+
+Actor -> App: launch
+App -> RCV: init
+RCV -> VoiceCommandDelegate: onVoiceCommandInit
+note right: Android: init on Host, Mac: on Controller
+VoiceCommandDelegate -> VoiceCommandManger: initSpeechRecognitionServiceIfNeed
+VoiceCommandManger -> VoiceCommandManger: isActivated(): Boolean
+VoiceCommandManger -> VoiceCommandManger: shouldRelease(): Boolean
+return
+note right: return !isToggleEnabled || !isCompatible || !isMicPermissionGranted || !isLDSupported || !isLocaleSupported
+return
+note right: return !shouldRelease() && !isBlocked
+
+VoiceCommandManger -> IVoiceCommandUiController: shouldInitVoiceCommand():Boolean
+return ture if Host, otherwise false.
+
+VoiceCommandManger -> SpeechRecognitionService: needInit(): Boolean
+return
+note right: false if initialized
+
+alt need init VC
+    VoiceCommandManger -> IVoiceCommandUiController: setBrandKeyword(keyword: ArrayList<String>)
+    VoiceCommandManger -> SpeechRecognitionService: addListener(listener: SpeechRecognitionListener)
+    VoiceCommandManger -> VoiceCommandGrammarProvider: getGrammars(brands: List<String>): List<Grammar>
+    return
+    VoiceCommandManger ->> SpeechRecognitionService: init(context: Context, grammars: List<Grammar>)
+    SpeechRecognitionService -> VoiceCommandManger: onReady
+    VoiceCommandManger -> IVoiceCommandService: setProvider(provider: IVoiceCommandSdkProvider)
+    VoiceCommandManger -> UpcomingPresenter: onReady()
+    UpcomingPresenter -> UpcomingMeetingTileFragment: initVoiceCommandMeetingPresenter(shouldInit: Boolean)
+    create VoiceCommandMeetingEventPresenter
+    UpcomingMeetingTileFragment -> VoiceCommandMeetingEventPresenter: create
+end
+@enduml

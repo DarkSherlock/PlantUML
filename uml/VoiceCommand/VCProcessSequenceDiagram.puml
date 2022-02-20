@@ -1,0 +1,75 @@
+@startuml
+'https://plantuml.com/sequence-diagram
+
+actor Actor
+autonumber
+autoactivate on
+
+VoiceCommandManager -> SpeechRecognitionService: startListening(grammarName: String, timeout: Int = 0)
+VoiceCommandManager -> RCV: onEnterStandbyMode(events: ArrayList<MeetingItem>)
+RCV -> VoiceCommandDelegate: notifyVoiceCommandStatus(status: VoiceCommandProcess?, param: String?)
+note right: change the status to VoiceCommandProcess.STANDBY from IDLE
+VoiceCommandDelegate -> VoiceCommandDisplayPresenter: onStatusChanged(status: VoiceCommandProcess)
+deactivate VoiceCommandDisplayPresenter
+VoiceCommandDelegate -> HomeSecondaryFragment: showVoiceCommand()
+note right: HomeMainFragment extends HomeSecondaryFragment
+HomeSecondaryFragment -> HomeSecondaryFragment: generateVoiceCommandDialog(): VoiceCommandDialogFragment
+    create VoiceCommandDialogFragment
+    HomeSecondaryFragment -> VoiceCommandDialogFragment:create
+        create VoiceCommandPresenter
+        VoiceCommandDialogFragment -> VoiceCommandPresenter:create
+        return
+    return
+return
+HomeSecondaryFragment -> VoiceCommandDialogFragment:showVoiceCommandDialog(fragmentManager: FragmentManager)
+
+deactivate VoiceCommandDelegate
+deactivate VoiceCommandDialogFragment
+deactivate HomeSecondaryFragment
+deactivate RCV
+deactivate SpeechRecognitionService
+Actor -> SpeechRecognitionService: saySomething
+SpeechRecognitionService -> VoiceCommandManager: onBegin()
+    VoiceCommandManager -> VoiceCommandManager: postGenerateFinalResultTask()
+    return
+    VoiceCommandManager -> RCV: didStartSpeaking()
+deactivate VoiceCommandManager
+deactivate RCV
+
+SpeechRecognitionService -> VoiceCommandManager: onPartialResult(text: String)
+deactivate VoiceCommandManager
+
+SpeechRecognitionService -> VoiceCommandManager: onResult(text: String, score: Int)
+VoiceCommandManager -> RCV: pocketSphinxDidReceiveHypothesis(text: String)
+alt text matches "Hi ringcentral"
+    RCV -> VoiceCommandDelegate: notifyVoiceCommandStatus(status: VoiceCommandProcess?, param: String?)
+    note right: change the status to LISTENING
+    VoiceCommandDelegate -> VoiceCommandPresenter: handleStatusChanged(status: VoiceCommandProcess?,meetingItems: ArrayList<MeetingItem>?,params: String?)
+    VoiceCommandPresenter -> VoiceCommandPresenter: getMeetingItems(meetingItems: ArrayList<MeetingItem>?, params: String?): ArrayList<MeetingItem>?
+    return
+    VoiceCommandPresenter -> VoiceCommandDialogFragment: onListening(meetingList: ArrayList<MeetingItem>?)
+end
+
+deactivate VoiceCommandManager
+deactivate VoiceCommandDelegate
+deactivate VoiceCommandDialogFragment
+deactivate VoiceCommandPresenter
+deactivate RCV
+deactivate SpeechRecognitionService
+
+Actor -> SpeechRecognitionService: say "join meeting"
+alt the vc meeting list's size > 1
+    RCV -> VoiceCommandDelegate: notifyVoiceCommandStatus to SELECTMEETING
+    deactivate VoiceCommandDelegate
+    deactivate SpeechRecognitionService
+    Actor -> SpeechRecognitionService: say "meeting one"
+    RCV -> VoiceCommandDelegate: notifyVoiceCommandStatus to JOINSUCCESS
+    deactivate VoiceCommandDelegate
+else
+    RCV -> VoiceCommandDelegate: notifyVoiceCommandStatus to JOINSUCCESS
+end
+
+VoiceCommandPresenter -> VoiceCommandDialogFragment: onJoiningMeeting(meetingItem: MeetingItem?)
+VoiceCommandDialogFragment -> VoiceCommandDialogFragment: dismissWithStopListening()
+ControllerVoiceCommandPresenter -> ControllerHomeActivity: launchMeetingByVoiceCommand(meetingItem: MeetingItem)
+@enduml

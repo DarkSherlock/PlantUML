@@ -1,0 +1,52 @@
+@startuml
+'https://plantuml.com/sequence-diagram
+
+autonumber
+autoactivate on
+
+UpcomingMeetingTileFragment -> VoiceCommandMeetingEventPresenter: handleVcMeetingEvents(joinNowViewModel: IJoinNowViewModel?)
+VoiceCommandMeetingEventPresenter -> VoiceCommandManager: isIdleOrStandby(): Boolean
+
+alt isIdleOrStandby
+    VoiceCommandMeetingEventPresenter -> IJoinNowViewModel: getUpcomingVoiceCommandEventList(): List<IJoinNowEvent>
+        IJoinNowViewModel -> IJoinNowViewModel: getUpcomingEventList(): ArrayList<IJoinNowEvent>
+        note right: return (upcoming or ongoing) meetings which their start time are in (start time - 15 minutes, start time + 15 minutes)
+        IJoinNowViewModel -> JoinNowEvent: isJoinAble(): Boolean
+        return
+        IJoinNowViewModel -> Iterable: filter
+        note right: filter by JoinNowEvent.isJoinAble()
+        return
+    return
+
+    VoiceCommandMeetingEventPresenter -> IJoinNowViewModel: isTopUpcomingEventJoinable(): Boolean
+    return
+    note right: return true if the first event is joinable
+    alt isTopUpcomingEventJoinable
+        VoiceCommandMeetingEventPresenter -> VoiceCommandMeetingEventPresenter: updateVoiceCommandMeetingList(eventList: List<IJoinNowEvent>)
+        create MeetingItem
+        VoiceCommandMeetingEventPresenter -> MeetingItem: create
+        VoiceCommandMeetingEventPresenter -> VoiceCommandManager: enterStandbyMode(voiceCommandMeetings: ArrayList<MeetingItem>)
+        VoiceCommandManager -> VoiceCommandManager: startListening(voiceCommand: EVoiceCommand = EVoiceCommand.JoinMeeting)
+        VoiceCommandManager -> SpeechRecognitionService: startListening(grammarName: String, timeout: Int = 0)
+        VoiceCommandManager -> RCV: onEnterStandbyMode(events: ArrayList<MeetingItem>)
+        RCV -> VoiceCommandDelegate: notifyVoiceCommandStatus(status: VoiceCommandProcess?, param: String?)
+        note right: change the status to VoiceCommandProcess.STANDBY from IDLE
+    else
+        VoiceCommandMeetingEventPresenter -> VoiceCommandMeetingEventPresenter: cancelListening()
+        VoiceCommandMeetingEventPresenter -> VoiceCommandManager: cancelListening()
+        VoiceCommandManager -> SpeechRecognitionService: cancelListening()
+        VoiceCommandManager -> RCV : onStopVoiceCommandSdk()
+        note right: notify RCV SDK to stop VC process.
+        RCV -> VoiceCommandDelegate: notifyVoiceCommandStatus(status: VoiceCommandProcess?, param: String?)
+        note right: set the status to VoiceCommandProcess.IDLE
+        VoiceCommandManager -> VoiceCommandManager: shouldRelease(): Boolean
+        alt shouldRelease
+            VoiceCommandManager -> VoiceCommandManager: releaseSpeechRecognitionService()
+            VoiceCommandManager -> SpeechRecognitionService: release()
+        end
+    end
+else in VC process
+    VoiceCommandMeetingEventPresenter -> VoiceCommandMeetingEventPresenter: setViewModel()
+    note right: cache the view model to update the voice command meeting event list after the status is changed to STANDBY
+end
+@enduml

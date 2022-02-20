@@ -1,0 +1,236 @@
+@startuml
+'https://plantuml.com/class-diagram
+skinparam classAttributeIconSize 0
+
+ControllerHomeActivity --> ControllerVoiceCommandDialogFragment
+ControllerHomeActivity -up-> VoiceCommandDisplayPresenter
+ControllerHomeActivity -up-|> IDisplayVoiceCommandView
+ControllerVoiceCommandDialogFragment --|> VoiceCommandDialogFragment
+HomeSecondaryFragment -up-> VoiceCommandDisplayPresenter
+HomeSecondaryFragment -up-|> IDisplayVoiceCommandView
+HomeSecondaryFragment --> HostSecondaryVoiceCommandDialogFragment
+HostVoiceCommandDialogFragment --|> HostSecondaryVoiceCommandDialogFragment
+HostSecondaryVoiceCommandDialogFragment --|> VoiceCommandDialogFragment
+HomeMainFragment --|> HomeSecondaryFragment
+HomeMainFragment --> HostVoiceCommandDialogFragment
+
+VoiceCommandPresenter -down-> VoiceCommandUiController
+VoiceCommandPresenter -down-> IVoiceCommandDelegate
+VoiceCommandPresenter --> IVoiceCommandView
+VoiceCommandDialogFragment ..|> IVoiceCommandView
+VoiceCommandDialogFragment -right-> VoiceCommandViewController
+VoiceCommandViewController ..|> IVoiceCommandView
+VoiceCommandUiController --> IVoiceCommandDelegate
+VoiceCommandManager .down.> SpeechRecognitionService
+VoiceCommandManager --> Callback
+VoiceCommandManager --> IVoiceCommandSdkListener
+VoiceCommandManager -down-> VoiceCommandUiController
+VoiceCommandManager .left.> EVCBlockType
+VoiceCommandMeetingEventPresenter .down.> VoiceCommandManager
+SpeechRecognitionService .down.> Grammar
+SpeechRecognitionService --> SpeechRecognitionListener
+
+abstract class IVoiceCommandDelegate {
+    + notifyVoiceCommandStatus(status, params)
+}
+
+class VoiceCommandUiController {
+    - delegate: VoiceCommandDelegate
+}
+class VoiceCommandManager<< (S, #FF7700) >> {
+    + isReady: Boolean
+    + isMicPermissionGranted: Boolean
+    + isLDSupported: Boolean
+    - voiceCommandUiController: IVoiceCommandUiController
+    - isToggleEnabled: Boolean
+    - isBlocked: Boolean
+    - isCompatible: Boolean
+    - isLocaleSupported: Boolean
+    - voiceCommandSdkProvider: IVoiceCommandSdkProvider
+    - delegate: VoiceCommandDelegate
+    - callbacks: List<Callback>
+
+    + init(isHost: Boolean)
+    + setBlockTypeValue(type: EVCBlockType, isBlock: Boolean)
+    + isActivated(): Boolean
+    + addCallback(callback: Callback）
+    + removeCallback(callback: Callback)
+    + isIdleOrStandby(): Boolean
+    + startListening(voiceCommand: EVoiceCommand)
+    + cancelListening()
+    + pauseListening()
+    + enterStandbyMode(voiceCommandMeetings: ArrayList<MeetingItem>)
+    - shouldRelease(): Boolean
+    - canListening(): Boolean
+    - initSpeechRecognitionServiceIfNeed()
+    - initTimeoutHandlerThread()
+    - releaseTimeoutHandler()
+    - releaseSpeechRecognitionService()
+    - loadFinalResult()
+}
+
+class IVoiceCommandSdkListener {
+    + didStartSpeaking()
+    + pocketsphinxDidReceiverHypothesis(String text)
+    + onEnterStandbyMode(ArrayList<MeetingItem> events)
+    + onStopVoiceCommandSdk()
+}
+
+
+class SpeechRecognitionService<< (S, #FF7700) >> {
+    - ioScope: CoroutineScope
+    - recognizer: SpeechRecognizer
+    - listenerList: CopyOnWriteArrayList<WeakReference<SpeechRecognitionListener>>
+
+    + init()
+    + needInit():Boolean
+    + startListening(Grammar grammar, int timeout)
+    + stopListening()
+    + cancelListening()
+    + release()
+    + addListener(VoiceCommandListener listener)
+    + removeListener(VoiceCommandListener listener)
+}
+
+interface Callback {
+    + onReleased()
+    + onReady()
+}
+
+enum EVCBlockType {
+    SHARE(1 shl 0)
+    GRACEFUL(1 shl 1)
+    IN_MEETING(1 shl 2)
+    BACKGROUND(1 shl 3)
+    AUTO_FRAMING(1 shl 4)
+    FORCE_UPGRADE(1 shl 5)
+    INCOMING_VIDEO_CALL(1 shl 6)
+}
+
+class Grammar {
+    + name:String
+    + content: String
+}
+
+interface SpeechRecognitionListener {
+    + onError(error: Exception)
+    + onResult(text: String, score: Int)
+    + onPartialResult(text: String)
+    + onTimeout()
+    + onBegin()
+    + onEnd()
+    + onReady()
+}
+
+class VoiceCommandMeetingEventPresenter {
+    - viewModel: IJoinNowViewModel
+    - hasPhonePermission: Boolean
+    - voiceCommandUiController: IVoiceCommandUiController
+    - delegate: SimpleVoiceCommandDelegate
+    + handleVcMeetingEvents(joinNowViewModel: IJoinNowViewModel)
+    + cancelListening()
+    + updateVoiceCommandMeetingList(eventList: List<IJoinNowEvent>)
+    - isTopUpcomingEventJoinable(): Boolean
+    - getUpcomingVoiceCommandEventList(): List<IJoinNowEvent>
+    - isJoinAble(): Boolean
+}
+note left of VoiceCommandMeetingEventPresenter
+    com.glip.core.joinnow.IJoinNowViewModel#getUpcomingEventList return a raw event list which only include
+    meetings that the current time are in (start time - 15 minutes, start time + 15 minutes), so if you schedule a
+    event but VC is not activated, probably current time is not in the range(start time - 15 minutes, start time + 15 minutes).
+    In addition, getUpcomingVoiceCommandEventList(): List<IJoinNowEvent> will call isJoinAble() filter again.
+    These events will be filter out.
+    1. have no join or dial in action.
+    2. unknown meeting type.
+    3. dial-in meeting but no dial in info or soft phone permission.
+    4. webinar meeting but no LD permission or feature compatibility
+end note
+
+class VoiceCommandDialogFragment {
+    - viewController: VoiceCommandViewController
+    - presenter: VoiceCommandPresenter
+    - resumeRunnable: ResumeRunnable
+    - handler: Handler
+
+    + onTouchEvent(event: MotionEvent)
+    + dismissWithStopListening()
+    + release()
+    # getLayoutId(): Int
+}
+
+class VoiceCommandViewController {
+    + speakingImageView: ImageView
+    + successImageView: ImageView
+    + msgRecyclerView: RecyclerView
+    - presenter: VoiceCommandPresenter
+
+    - startSpeakingAnimation()
+    - stopSpeakingAnimation()
+    - updateStatusMessage(list: List<CharSequence>)
+}
+
+interface IVoiceCommandView {
+    + onIdle()
+    + onStandby()
+    + onListening(meetingList:ArrayList<MeetingItem>)
+    + onSelectMeeting(meetingList: ArrayList<MeetingItem>)
+    + onJoiningMeeting(meetingItem: MeetingItem)
+}
+
+class VoiceCommandPresenter {
+    - view: IVoiceCommandView
+    - gson: Gson
+    - voiceCommandUiController: IVoiceCommandUiController
+
+    + loadCurrentStatus()
+    - handleStatusChanged(status: VoiceCommandProcess, meetingItems: ArrayList<MeetingItem>,params: String)
+    - getMeetingItems(meetingItems: ArrayList<MeetingItem>,params: String): ArrayList<MeetingItem>
+}
+
+class ControllerHomeActivity {
+    - presenter: VoiceCommandDisplayPresenter
+    - vcdialog: ControllerVoiceCommandDialogFragment
+    + onTouchEvent(MotionEvent event)
+}
+
+class ControllerVoiceCommandDialogFragment {
+    + callback: ControllerVoiceCommandCallback
+    + joinMeeting(meetingItem: MeetingItem)
+    # getLayoutId() = R.layout.controller_fragment_voice_command
+}
+
+class HostVoiceCommandDialogFragment {
+    - currentMediaPlayer: MediaPlayer
+    + release()
+    + playMedia(mediaResId: Int)
+    + releaseMediaPlayer()
+}
+
+class HostSecondaryVoiceCommandDialogFragment {
+    # getLayoutId() = R.layout.host_fragment_voice_command
+    + release()
+}
+
+class HomeMainFragment {
+    # vcdialog: HostVoiceCommandDialogFragment
+}
+
+class HomeSecondaryFragment {
+    - presenter: VoiceCommandDisplayPresenter
+    # vcdialog: HostSecondaryVoiceCommandDialogFragment
+
+    + onTouchEvent(MotionEvent event)
+    + dismissVoiceCommand()
+}
+
+class VoiceCommandDisplayPresenter {
+    - view: IDisplayVoiceCommandView
+    - voiceCommandUiController: IVoiceCommandUiController
+    + loadCurrentStatus()
+    - onStatusChanged(status:VoiceCommandProcess)
+}
+
+interface IDisplayVoiceCommandView {
+    + showVoiceCommand()
+}
+@enduml

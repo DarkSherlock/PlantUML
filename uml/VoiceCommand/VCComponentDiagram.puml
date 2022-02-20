@@ -1,0 +1,22 @@
+@startuml
+'https://plantuml.com/component-diagram
+
+interface notifyRcvEvents as NRCV
+
+
+NRCV -d- [RCV SDK]
+checkResult -d- [RCV SDK]
+notifyVoiceCommandStatus -d- [RCV SDK]
+recognition -d- [SpeechRecognition SDK]
+notifyHypothesis -d- [SpeechRecognition SDK]
+audioRecording -d- [Framework]
+
+
+[APP] ..> NRCV: filter available events
+[APP] ..> recognition: startListening
+[APP] ..> notifyHypothesis: filter by confidence
+[APP] ..> checkResult: notifyResult
+[APP] ..> notifyVoiceCommandStatus: show corresponding UI
+[SpeechRecognition SDK] ..> audioRecording: startAudioRecording
+
+@enduml
