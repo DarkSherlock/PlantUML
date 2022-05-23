@@ -10,8 +10,8 @@ VoiceCommandManager -> RCV: onEnterStandbyMode(events: ArrayList<MeetingItem>)
 RCV -> VoiceCommandDelegate: notifyVoiceCommandStatus(status: VoiceCommandProcess?, param: String?)
 note right: change the status to VoiceCommandProcess.STANDBY from IDLE
 VoiceCommandDelegate -> VoiceCommandDisplayPresenter: onStatusChanged(status: VoiceCommandProcess)
+VoiceCommandDisplayPresenter -> HomeSecondaryFragment: showVoiceCommand()
 deactivate VoiceCommandDisplayPresenter
-VoiceCommandDelegate -> HomeSecondaryFragment: showVoiceCommand()
 note right: HomeMainFragment extends HomeSecondaryFragment
 HomeSecondaryFragment -> HomeSecondaryFragment: generateVoiceCommandDialog(): VoiceCommandDialogFragment
     create VoiceCommandDialogFragment
