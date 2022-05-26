@@ -1,0 +1,31 @@
+@startuml
+'https://plantuml.com/sequence-diagram
+
+'autonumber
+
+actor Actor
+participant ControllerMeetingService
+participant RemoteJoinMeetingController
+participant LocalJoinMeetingController
+autoactivate off
+
+Actor -> ControllerMeetingService: joinMeeting
+alt support dismiss controller from join
+    ControllerMeetingService -> RemoteJoinMeetingController:joinMeeting;
+    RemoteJoinMeetingController -> ClientPdUiController:joinMeetingWithOptions;
+    ClientPdUiController -> SDK:sendJoinAction
+    SDK -> HostClientPdUiController:onRequestToJoin
+    HostClientPdUiController -> HandleRemoteJoinMeetingController: notifyOnActionEvent
+    HandleRemoteJoinMeetingController -> HostCommunicationService:onUpdateRoomAction
+else
+    ControllerMeetingService -> LocalJoinMeetingController:joinMeeting;
+    LocalJoinMeetingController -> RcvUiController:joinMeetingWithOptions;
+    RcvUiController -> SDK:sendJoinAction
+    SDK -> HostCommunicationService:onUpdateRoomAction
+end
+
+HostCommunicationService -> HostHomePresenter:onAction
+HostHomePresenter -> HostMeetingService:joinMeeting
+HostMeetingService -> LocalJoinMeetingController:joinMeeting
+
+@enduml

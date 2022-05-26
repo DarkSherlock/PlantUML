@@ -1,0 +1,110 @@
+@startuml
+'https://plantuml.com/class-diagram
+skinparam classAttributeIconSize 0
+
+MeetingService --> MeetingController
+HostMeetingService --|> MeetingService
+
+ControllerMeetingService --|> MeetingService
+ControllerMeetingService --> LocalJoinMeetingController
+ControllerMeetingService --> RCVRemoteJoinMeetingController
+HostMeetingService --> LocalJoinMeetingController
+HostMeetingService --> HandleRemoteJoinMeetingController
+ControllerPanelistMeetingService --> PanelistRemoteJoinMeetingController
+HostPanelistMeetingService --> HandleRemoteJoinPanelistMeetingController
+
+
+
+MeetingService ..|> Delegate
+MeetingController --> Delegate
+
+LocalJoinMeetingController --|> MeetingController
+RemoteJoinMeetingController --|> MeetingController
+RCVRemoteJoinMeetingController --|> RemoteJoinMeetingController
+PanelistRemoteJoinMeetingController --|> RemoteJoinMeetingController
+HandleRemoteJoinPanelistMeetingController --|> HandleRemoteJoinMeetingController
+HandleRemoteJoinMeetingController ..> HostCommunicationService
+
+class HostMeetingService {
+    - localJoinMeetingController: localJoinMeetingController
+    - handleRemoteJoinMeetingController: HandleRemoteJoinMeetingController
+}
+
+class ControllerMeetingService {
+    - localJoinMeetingController: localJoinMeetingController
+    - remoteJoinMeetingController: RCVRemoteJoinMeetingController
+}
+
+class MeetingService {
+    # meetingController: MeetingController
+    - gapFeature: GapFeature
+
+    # {abstract} onDismissControllerJoinConfigChanged(enabled: Boolean)
+}
+
+abstract class MeetingController {
+    + breakoutRoomsListener: IBreakoutRoomsListener?
+
+    # delegate: Delegate
+
+    + {abstract} getJoinUrl(): String?
+    + {abstract} getMeetingId(): String?
+    + {abstract} getMeetingPassword(): String?
+    + {abstract} isE2eeMeeting(): Boolean
+    + {abstract} isGuestUser(participant: IParticipant): Boolean
+    + {abstract} getBrUiController(): IBreakoutRoomsUiController?
+    + {abstract} getParticipants(): List<IRoomParticipant>?
+    + {abstract} resumeMeeting(meetingId: String, password: String? = null
+    + {abstract} continueWithPassword(password: String?)
+
+    + incomingMeeting()
+    + rejectIncomingMeeting()
+    + startMeeting()
+
+    + joinMeeting(meetingId: String,joinParams: JoinParams,password: String? = null,joinName: String? = null, joinUrl: String? = null,email: String? = null): Boolean
+
+    + leaveMeetingWithAction(assignModeratorInDefault: Boolean = false,shouldTransition: Boolean = true)
+    + leaveMeetingWithoutAction(shouldTransition: Boolean = true)
+    + endMeeting()
+
+    # updateState(state: EStateType, errorType: MeetingErrorType? = null)
+    # notifyError(error: MeetingErrorType?, source: EErrorSource, shouldTransition: Boolean = true)
+}
+
+class LocalJoinMeetingController {
+    - activeMeetingUiController: IActiveMeetingUiController?
+}
+
+abstract class RemoteJoinMeetingController {
+    - meetingType: MeetingType
+    - clientPdUiController: IClientPdUiController
+    # {abstract} notifyHostStatusChanged(status: HostMeetingStatus?)
+    # {abstract} notifyError(errorType: MeetingErrorType)
+
+}
+
+class RCVRemoteJoinMeetingController {
+    # notifyHostStatusChanged(status: HostMeetingStatus?)
+    # notifyError(errorType: MeetingErrorType)
+}
+
+class PanelistRemoteJoinMeetingController {
+    # notifyHostStatusChanged(status: HostMeetingStatus?)
+    # notifyError(errorType: MeetingErrorType)
+}
+
+class HandleRemoteJoinMeetingController {
+    - hostPdUiController: IHostPdUiController
+}
+
+class HandleRemoteJoinPanelistMeetingController {
+    - notifyUpdateMeetingState(stateType: EStateType,errorType: MeetingErrorType? = null)
+    - notifyError( error: MeetingErrorType?, shouldTransition: Boolean = true)
+}
+
+interface Delegate {
+    + updateMeetingState(stateType: EStateType, error: MeetingErrorType? = null)
+    + onJoinMeetingError(error: MeetingErrorType?, source: EErrorSource, shouldTransition: Boolean = true)
+}
+
+@enduml

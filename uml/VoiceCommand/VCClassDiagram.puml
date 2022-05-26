@@ -4,10 +4,10 @@ skinparam classAttributeIconSize 0
 
 ControllerHomeActivity --> ControllerVoiceCommandDialogFragment
 ControllerHomeActivity -up-> VoiceCommandDisplayPresenter
-ControllerHomeActivity -up-|> IDisplayVoiceCommandView
+ControllerHomeActivity .up.|> IDisplayVoiceCommandView
 ControllerVoiceCommandDialogFragment --|> VoiceCommandDialogFragment
 HomeSecondaryFragment -up-> VoiceCommandDisplayPresenter
-HomeSecondaryFragment -up-|> IDisplayVoiceCommandView
+HomeSecondaryFragment .up.|> IDisplayVoiceCommandView
 HomeSecondaryFragment --> HostSecondaryVoiceCommandDialogFragment
 HostVoiceCommandDialogFragment --|> HostSecondaryVoiceCommandDialogFragment
 HostSecondaryVoiceCommandDialogFragment --|> VoiceCommandDialogFragment
