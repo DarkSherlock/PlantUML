@@ -2,109 +2,127 @@
 'https://plantuml.com/class-diagram
 skinparam classAttributeIconSize 0
 
-MeetingService --> MeetingController
-HostMeetingService --|> MeetingService
+RCV.ClientPdUiController .down.> RCV.IControllerService
+RCF.RoomMeetingConnector .down.> RCV.IControllerService
 
-ControllerMeetingService --|> MeetingService
-ControllerMeetingService --> LocalJoinMeetingController
-ControllerMeetingService --> RCVRemoteJoinMeetingController
-HostMeetingService --> LocalJoinMeetingController
-HostMeetingService --> HandleRemoteJoinMeetingController
-ControllerPanelistMeetingService --> PanelistRemoteJoinMeetingController
-HostPanelistMeetingService --> HandleRemoteJoinPanelistMeetingController
+MeetingActionHandler o-- IHostPdUiController
+MeetingActionHandler ..> HostCommunicationService :notifyActions
 
+RcvMeetingActionHandler --|> MeetingActionHandler
+WebinarPanelistMeetingActionHandler --|> MeetingActionHandler
 
+HostMeetingService o-- RcvMeetingActionHandler
+HostMeetingService o-- HostRcvInMeetingController
+HostMeetingService o-- HostRcvJoinMeetingController
 
-MeetingService ..|> Delegate
-MeetingController --> Delegate
+HostRcvJoinMeetingController ..|> IRcvJoinMeetingController
+HostRcvInMeetingController ..|> IRcvInMeetingController
 
-LocalJoinMeetingController --|> MeetingController
-RemoteJoinMeetingController --|> MeetingController
-RCVRemoteJoinMeetingController --|> RemoteJoinMeetingController
-PanelistRemoteJoinMeetingController --|> RemoteJoinMeetingController
-HandleRemoteJoinPanelistMeetingController --|> HandleRemoteJoinMeetingController
-HandleRemoteJoinMeetingController ..> HostCommunicationService
+ControllerMeetingService o-- RcvClientInMeetingController
+ControllerMeetingService o-- RcvClientJoinMeetingController
+
+RcvClientJoinMeetingController ..|> IRcvJoinMeetingController
+RcvClientInMeetingController ..|> IRcvInMeetingController
+
+RcvClientJoinMeetingController --|> BaseClientJoinMeetingController
+WebinarPanelistClientJoinMeetingController --|> BaseClientJoinMeetingController
+
+RcvClientInMeetingController --|> BaseClientInMeetingController
+WebinarPanelistClientInMeetingController --|> BaseClientInMeetingController
+
+BaseClientJoinMeetingController o-- RCF.RoomMeetingConnector
+BaseClientInMeetingController o-- RCF.RoomMeetingConnector
 
 class HostMeetingService {
-    - localJoinMeetingController: localJoinMeetingController
-    - handleRemoteJoinMeetingController: HandleRemoteJoinMeetingController
+    - meetingActionHandler: RcvMeetingActionHandler
+    + inMeetingController: HostRcvInMeetingController
+    + joinMeetingController: HostRcvJoinMeetingController
 }
 
 class ControllerMeetingService {
-    - localJoinMeetingController: localJoinMeetingController
-    - remoteJoinMeetingController: RCVRemoteJoinMeetingController
+    + inMeetingController: RcvClientInMeetingController
+    + joinMeetingController: RcvClientJoinMeetingController
 }
 
-class MeetingService {
-    # meetingController: MeetingController
-    - gapFeature: GapFeature
-
-    # {abstract} onDismissControllerJoinConfigChanged(enabled: Boolean)
-}
-
-abstract class MeetingController {
-    + breakoutRoomsListener: IBreakoutRoomsListener?
-
-    # delegate: Delegate
-
-    + {abstract} getJoinUrl(): String?
-    + {abstract} getMeetingId(): String?
-    + {abstract} getMeetingPassword(): String?
-    + {abstract} isE2eeMeeting(): Boolean
-    + {abstract} isGuestUser(participant: IParticipant): Boolean
-    + {abstract} getBrUiController(): IBreakoutRoomsUiController?
-    + {abstract} getParticipants(): List<IRoomParticipant>?
-    + {abstract} resumeMeeting(meetingId: String, password: String? = null
-    + {abstract} continueWithPassword(password: String?)
-
-    + incomingMeeting()
-    + rejectIncomingMeeting()
-    + startMeeting()
-
-    + joinMeeting(meetingId: String,joinParams: JoinParams,password: String? = null,joinName: String? = null, joinUrl: String? = null,email: String? = null): Boolean
-
-    + leaveMeetingWithAction(assignModeratorInDefault: Boolean = false,shouldTransition: Boolean = true)
-    + leaveMeetingWithoutAction(shouldTransition: Boolean = true)
-    + endMeeting()
-
-    # updateState(state: EStateType, errorType: MeetingErrorType? = null)
-    # notifyError(error: MeetingErrorType?, source: EErrorSource, shouldTransition: Boolean = true)
-}
-
-class LocalJoinMeetingController {
-    - activeMeetingUiController: IActiveMeetingUiController?
-}
-
-abstract class RemoteJoinMeetingController {
-    - meetingType: MeetingType
-    - clientPdUiController: IClientPdUiController
-    # {abstract} notifyHostStatusChanged(status: HostMeetingStatus?)
-    # {abstract} notifyError(errorType: MeetingErrorType)
-
-}
-
-class RCVRemoteJoinMeetingController {
-    # notifyHostStatusChanged(status: HostMeetingStatus?)
-    # notifyError(errorType: MeetingErrorType)
-}
-
-class PanelistRemoteJoinMeetingController {
-    # notifyHostStatusChanged(status: HostMeetingStatus?)
-    # notifyError(errorType: MeetingErrorType)
-}
-
-class HandleRemoteJoinMeetingController {
+class MeetingActionHandler {
     - hostPdUiController: IHostPdUiController
+    # notifyJoin(meetingId: String?, password: String?, joinUrl: String?, email: String?)
 }
 
-class HandleRemoteJoinPanelistMeetingController {
-    - notifyUpdateMeetingState(stateType: EStateType,errorType: MeetingErrorType? = null)
-    - notifyError( error: MeetingErrorType?, shouldTransition: Boolean = true)
+class RcvMeetingActionHandler {
+    + onContinueJoinMeetingWithPwd(password: String?)
 }
 
-interface Delegate {
-    + updateMeetingState(stateType: EStateType, error: MeetingErrorType? = null)
-    + onJoinMeetingError(error: MeetingErrorType?, source: EErrorSource, shouldTransition: Boolean = true)
+class WebinarPanelistMeetingActionHandler {
+}
+
+class HostRcvInMeetingController {
+    - activeMeetingUiController: IActiveMeetingUiController? = null
+}
+
+class HostRcvJoinMeetingController {
+    - activeMeetingUiController: IActiveMeetingUiController? = null
+}
+
+class BaseClientJoinMeetingController {
+    # roomsMeetingConnector: IRoomsMeetingConnector?
+}
+
+class RcvClientJoinMeetingController {
+
+}
+
+class WebinarPanelistClientJoinMeetingController {
+
+}
+
+class BaseClientInMeetingController {
+    # roomsMeetingConnector: IRoomsMeetingConnector?
+    + sharingController: SharingController
+}
+
+class RcvClientInMeetingController {
+    + breakoutRoomController: ControllerBreakoutRoomController
+    + recordingController: ControllerRecordingController
+    + chatController: ControllerChatController
+    + e2eeMeetingController: ControllerE2eeMeetingController
+}
+
+class WebinarPanelistClientInMeetingController {
+
+}
+
+interface IRcvInMeetingController {
+    + breakoutRoomController: IBreakoutRoomController?
+    + e2eeMeetingController: IE2eeMeetingController?
+    + getMeetingId(): String?
+    + getMeetingPwd(): String?
+    + getMeetingTitle(): String?
+    + getMeetingHost(): String?
+    + getMeetingPersonalName(): String?
+    + getLinkToJoin(): String?
+    + isMeetingAllowJoin(): Boolean
+}
+
+interface IRcvJoinMeetingController {
+    fun startMeeting()
+    fun rejoinMeeting(reason: ERejoinReason)
+    fun continueWithPassword(password: String?)
+    fun resumeMeeting(meetingId: String, password: String? = null)
+    fun endMeeting()
+}
+
+namespace RCF {
+    class RoomMeetingConnector {
+    }
+}
+
+namespace RCV {
+    class ClientPdUiController {
+    }
+
+    class IControllerService<< (S, #FF7700) >> {
+    }
 }
 
 @enduml

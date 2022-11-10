@@ -4,28 +4,25 @@
 'autonumber
 
 actor Actor
-participant ControllerMeetingService
-participant RemoteJoinMeetingController
-participant LocalJoinMeetingController
+participant ControllerRcvMeetingService
+participant RcvClientJoinMeetingController
+participant RcvClientInMeetingController
 autoactivate off
 
-Actor -> ControllerMeetingService: joinMeeting
-alt support dismiss controller from join
-    ControllerMeetingService -> RemoteJoinMeetingController:joinMeeting;
-    RemoteJoinMeetingController -> ClientPdUiController:joinMeetingWithOptions;
-    ClientPdUiController -> SDK:sendJoinAction
-    SDK -> HostClientPdUiController:onRequestToJoin
-    HostClientPdUiController -> HandleRemoteJoinMeetingController: notifyOnActionEvent
-    HandleRemoteJoinMeetingController -> HostCommunicationService:onUpdateRoomAction
-else
-    ControllerMeetingService -> LocalJoinMeetingController:joinMeeting;
-    LocalJoinMeetingController -> RcvUiController:joinMeetingWithOptions;
-    RcvUiController -> SDK:sendJoinAction
-    SDK -> HostCommunicationService:onUpdateRoomAction
-end
-
+Actor -> ControllerRcvMeetingService: joinMeeting
+ControllerRcvMeetingService -> RcvClientJoinMeetingController:joinMeeting;
+RcvClientJoinMeetingController -> RoomMeetingConnector:joinMeetingWithOptions;
+RoomMeetingConnector -> SDK:sendJoinAction
+SDK --> HostClientPdUiController:onRequestToJoin
+HostClientPdUiController -> RcvMeetingActionHandler: notifyOnActionEvent
+RcvMeetingActionHandler -> HostCommunicationService:onUpdateRoomAction
 HostCommunicationService -> HostHomePresenter:onAction
-HostHomePresenter -> HostMeetingService:joinMeeting
-HostMeetingService -> LocalJoinMeetingController:joinMeeting
+HostHomePresenter -> HostRcvJoinMeetingController:joinMeeting
 
+HostRcvJoinMeetingController -> SDK: joinMeeting
+SDK --> RoomMeetingConnector:onHostStatusChanged(Connecting)
+RoomMeetingConnector -> ControllerRcvMeetingService:onMeetingStateChanged(Joining)
+ControllerRcvMeetingService -> RcvClientInMeetingController:init(meetingId, meetingHandler)
+
+SDK --> RoomMeetingConnector:onHostStatusChanged(IN_MEETING)
 @enduml
